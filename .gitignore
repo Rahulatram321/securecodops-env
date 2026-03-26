@@ -1,0 +1,25 @@
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables (NEVER commit API keys)
+.env
+*.env
+
+# VS Code
+.vscode/
+
+# Python cache
+*.egg-info/
+dist/
+build/
+
+# Sentence transformers cache
+.cache/
+models/
+
+# OS files
+.DS_Store
+Thumbs.db

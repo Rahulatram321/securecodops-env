@@ -1,0 +1,41 @@
+[
+  {
+    "id": "easy_001",
+    "code": "def find_max(numbers):\n    if not numbers:\n        return None\n    max_val = numbers[0]\n    for i in range(1, len(numbers) + 1):\n        if numbers[i] > max_val:\n            max_val = numbers[i]\n    return max_val",
+    "language": "python",
+    "context": "Find the off-by-one bug in this function.",
+    "ground_truth": {
+      "lines": [5],
+      "type": "bug",
+      "severity": "medium",
+      "fix": "for i in range(1, len(numbers)):",
+      "keywords": ["off-by-one", "index", "range", "out of bounds"]
+    }
+  },
+  {
+    "id": "easy_002",
+    "code": "def process_data(data):\n    result = data.get('value').upper()\n    return f'Processed: {result}'",
+    "language": "python",
+    "context": "Identify the missing null check.",
+    "ground_truth": {
+      "lines": [2],
+      "type": "bug",
+      "severity": "medium",
+      "fix": "value = data.get('value')\n    if value is None:\n        return 'No value'\n    result = value.upper()",
+      "keywords": ["None", "null", "check", "AttributeError"]
+    }
+  },
+  {
+    "id": "easy_003",
+    "code": "def is_adult(age):\n    if age = 18:\n        return True\n    return age > 18",
+    "language": "python",
+    "context": "Fix the comparison operator.",
+    "ground_truth": {
+      "lines": [2],
+      "type": "bug",
+      "severity": "medium",
+      "fix": "if age == 18:",
+      "keywords": ["comparison", "assignment", "operator", "syntax"]
+    }
+  }
+]

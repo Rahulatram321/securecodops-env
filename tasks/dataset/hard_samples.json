@@ -1,0 +1,39 @@
+[
+  {
+    "id": "hard_001",
+    "logs": "2024-03-20 10:15:22 - ERROR - Database connection pool exhausted\n2024-03-20 10:15:23 - ERROR - Transaction failed: Deadlock detected",
+    "stack_trace": "Traceback (most recent call last):\n  File \"app.py\", line 45, in update_balance\n    db.save_transaction(u1, u2, amount)\n  File \"db.py\", line 12, in save_transaction\n    self.conn.execute(...) # Race condition here",
+    "available_files": ["app.py", "db.py", "config.py"],
+    "file_contents": {
+      "app.py": "from db import Database\ndb = Database()\n\ndef update_balance(u1, u2, amount):\n    db.save_transaction(u1, u2, amount)",
+      "db.py": "import threading\n\nclass Database:\n    def __init__(self):\n        self.conn = None # Mock conn\n        \n    def save_transaction(self, u1, u2, amount):\n        # Bug: No locking for concurrent updates\n        u1.balance -= amount\n        u2.balance += amount\n        self.update_db(u1, u2)",
+      "config.py": "DB_POOL_SIZE = 10\nDEBUG = True"
+    },
+    "ground_truth": {
+      "root_cause_file": "db.py",
+      "lines": [9, 10],
+      "type": "RACE_CONDITION",
+      "severity": "high",
+      "fix": "Add threading.Lock() around balance updates in Database class",
+      "keywords": ["race condition", "thread", "lock", "concurrent", "atomic"]
+    }
+  },
+  {
+    "id": "hard_002",
+    "logs": "2024-03-21 14:02:11 - WARNING - Memory usage threshold reached: 95%\n2024-03-21 14:02:15 - CRITICAL - Handler failed: MemoryError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"server.py\", line 88, in handle_request\n    cache.add_to_history(request.data)\n  File \"cache.py\", line 15, in add_to_history\n    self._history_list.append(data) # Never cleared",
+    "available_files": ["server.py", "cache.py"],
+    "file_contents": {
+      "server.py": "from cache import RequestCache\ncache = RequestCache()\n\ndef handle_request(req):\n    cache.add_to_history(req.data)",
+      "cache.py": "class RequestCache:\n    def __init__(self):\n        self._history_list = []\n\n    def add_to_history(self, data):\n        self._history_list.append(data) # Leak: unbounded growth"
+    },
+    "ground_truth": {
+      "root_cause_file": "cache.py",
+      "lines": [6],
+      "type": "MEMORY_LEAK",
+      "severity": "critical",
+      "fix": "Implement a TTL or max size for _history_list: if len(self._history_list) > 1000: self._history_list.pop(0)",
+      "keywords": ["memory leak", "unbounded", "cache", "growth", "MemoryError"]
+    }
+  }
+]

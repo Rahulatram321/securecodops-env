@@ -1,0 +1,44 @@
+[
+  {
+    "id": "medium_001",
+    "code": "import sqlite3\n\ndef get_user_profile(user_id):\n    conn = sqlite3.connect('users.db')\n    cursor = conn.cursor()\n    query = f'SELECT * FROM profiles WHERE id = {user_id}'\n    cursor.execute(query)\n    return cursor.fetchone()",
+    "language": "python",
+    "cwe_id": "CWE-89",
+    "vulnerability": "SQL Injection",
+    "ground_truth": {
+      "lines": [6, 7],
+      "type": "security",
+      "severity": "critical",
+      "fix": "Use parameterized queries: cursor.execute('SELECT * FROM profiles WHERE id = ?', (user_id,))",
+      "keywords": ["sql injection", "parameterized", "user input", "sqlite"]
+    }
+  },
+  {
+    "id": "medium_002",
+    "code": "import requests\n\nAPI_KEY = 'sk-1234567890abcdef1234567890abcdef'\n\ndef fetch_data():\n    headers = {'Authorization': f'Bearer {API_KEY}'}\n    return requests.get('https://api.example.com/data', headers=headers)",
+    "language": "python",
+    "cwe_id": "CWE-798",
+    "vulnerability": "Hardcoded Credentials",
+    "ground_truth": {
+      "lines": [3],
+      "type": "security",
+      "severity": "high",
+      "fix": "Use environment variables: API_KEY = os.getenv('API_KEY')",
+      "keywords": ["hardcoded", "credentials", "api key", "security"]
+    }
+  },
+  {
+    "id": "medium_003",
+    "code": "import os\n\ndef read_user_file(filename):\n    base_path = '/app/data/user_files/'\n    full_path = os.path.join(base_path, filename)\n    with open(full_path, 'r') as f:\n        return f.read()",
+    "language": "python",
+    "cwe_id": "CWE-22",
+    "vulnerability": "Path Traversal",
+    "ground_truth": {
+      "lines": [5, 6],
+      "type": "security",
+      "severity": "high",
+      "fix": "Sanitize path: if not os.path.abspath(full_path).startswith(base_path): raise ValueError('Invalid path')",
+      "keywords": ["path traversal", "directory traversal", "file access", "sanitization"]
+    }
+  }
+]

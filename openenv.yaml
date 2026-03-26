@@ -1,0 +1,59 @@
+name: securecodops-env
+version: "1.0.0"
+description: "AI DevSecOps Debugging & Security Audit Environment for OpenEnv"
+author: "Antigravity"
+tags: [devsecops, code-review, security, debugging, real-world]
+
+observation_space:
+  type: object
+  properties:
+    task_id: {type: string}
+    step_count: {type: integer}
+    max_steps: {type: integer}
+    code_snippet: {type: string}
+    language: {type: string}
+    context: {type: string}
+    logs: {type: string}
+    stack_trace: {type: string}
+    available_files: {type: array, items: {type: string}}
+    revealed_files: {type: object, additionalProperties: {type: string}}
+    current_phase: {type: string}
+    hints_used: {type: integer}
+    metadata: {type: object}
+
+action_space:
+  type: object
+  properties:
+    action_type: {type: string, enum: [IDENTIFY_ISSUE, REQUEST_FILE, ASK_QUESTION, FORM_HYPOTHESIS, NARROW_DOWN, PROPOSE_FIX]}
+    line_numbers: {type: array, items: {type: integer}}
+    issue_type: {type: string, enum: [BUG, SECURITY, PERFORMANCE, LOGIC, MEMORY_LEAK, RACE_CONDITION]}
+    severity: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+    suggested_fix: {type: string}
+    confidence: {type: number, minimum: 0.0, maximum: 1.0}
+    file_name: {type: string}
+    question: {type: string}
+    hypothesis: {type: string}
+    explanation: {type: string}
+    test_case: {type: string}
+
+tasks:
+  - id: spot_the_bug
+    difficulty: easy
+    description: "Identify obvious bugs in single-function code snippets"
+    max_steps: 5
+  - id: security_audit
+    difficulty: medium
+    description: "Identify security vulnerabilities based on real CVE patterns"
+    max_steps: 7
+  - id: system_debug
+    difficulty: hard
+    description: "Multi-turn system debugging using logs, stack traces, multi-file"
+    max_steps: 10
+
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
+  tasks: /tasks
+  grader: /grader
+  baseline: /baseline

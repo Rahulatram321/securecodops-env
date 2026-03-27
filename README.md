@@ -1,65 +1,167 @@
+---
+title: SecureCodeOpsEnv
+emoji: 🛡️
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: true
+tags:
+  - openenv
+  - devsecops
+  - code-review
+  - security
+  - reinforcement-learning
+  - agent-evaluation
+---
+
 # SecureCodeOpsEnv 🛡️
-### AI DevSecOps Debugging & Security Audit Environment (OpenEnv)
+### AI DevSecOps Debugging & Security Audit Environment
 
-SecureCodeOpsEnv is a high-fidelity sandbox for evaluating AI agents on complex, multi-turn software debugging and security auditing tasks. It moves beyond static code fixes by enforcing structured reasoning through a phase-based state machine.
-
----
-
-## 🚀 Why Existing Benchmarks Fail
-Most existing AI coding benchmarks (e.g., HumanEval, MBPP) suffer from:
-- **Static Evaluation**: They test isolated functions rather than system-wide interactions.
-- **No Multi-Turn Reasoning**: Agents are rarely required to fetch logs or inspect multiple files.
-- **No Trajectory Rewards**: They prioritize pass/fail over the logical investigation path.
-
-## ✨ The Solution: SecureCodeOpsEnv
-- **Phased State Machine**: `INIT → CONTEXT_FETCH → ROOT_CAUSE → FINAL`.
-- **Dynamic Information Reveal**: System visibility is gated by the agent's current phase.
-- **Trajectory-Aware Grading**: Composite score of phase completion, precise identification, semantic fix quality, and efficiency.
+> The first OpenEnv environment that simulates real-world DevSecOps investigation — from reading logs to proposing production-ready fixes — across 3 difficulty tiers with trajectory-aware grading.
 
 ---
 
-## 🛠️ API Usage
+## 🎯 Why This Exists
 
-### 1. Reset Environment
-```bash
-curl -X POST "http://localhost:7860/reset?task_id=system_debug"
+Code review and security auditing are among the highest-leverage tasks in software engineering — yet no OpenEnv environment exists to train or evaluate agents on them.
+
+**Existing benchmarks fail because:**
+- They are static (no interaction, no reward shaping)
+- They test knowledge, not reasoning
+- They have no trajectory signal — just binary pass/fail
+- They don't simulate real debugging workflows
+
+SecureCodeOpsEnv fills this gap.
+
+---
+
+## 🏗️ Environment Design
+
+### Observation Space
+| Field | Type | Description |
+|---|---|---|
+| task_id | string | Current task identifier |
+| step_count | int | Steps taken in episode |
+| code_snippet | string | Code to review (easy/medium) |
+| logs | string | System error logs (hard) |
+| stack_trace | string | Error stack trace (hard) |
+| available_files | list | Files agent can request (hard) |
+| revealed_files | dict | Files already revealed |
+| current_phase | enum | INIT/CONTEXT_FETCH/ROOT_CAUSE/FINAL |
+
+### Action Space
+| Field | Type | Description |
+|---|---|---|
+| action_type | enum | IDENTIFY_ISSUE, REQUEST_FILE, NARROW_DOWN, PROPOSE_FIX |
+| line_numbers | list[int] | Flagged line numbers |
+| issue_type | enum | BUG, SECURITY, PERFORMANCE, LOGIC, RACE_CONDITION |
+| severity | enum | LOW, MEDIUM, HIGH, CRITICAL |
+| suggested_fix | string | Proposed fix |
+| explanation | string | Agent's reasoning |
+| confidence | float | 0.0–1.0 |
+
+---
+
+## 🗂️ Tasks
+
+### 🟢 Task 1 — `spot_the_bug` (Easy)
+- **Input:** Single Python function with a real bug
+- **Source:** BugsInPy-inspired real bug patterns
+- **Agent must:** Identify buggy lines + propose fix in one step
+- **Expected frontier model score:** ~0.75
+
+### 🟡 Task 2 — `security_audit` (Medium)
+- **Input:** Web application code with hidden vulnerability
+- **Source:** Real CVE patterns (CWE-89, CWE-798, CWE-22)
+- **Agent must:** Classify vulnerability + identify lines + fix
+- **Expected frontier model score:** ~0.45
+
+### 🔴 Task 3 — `system_debug` (Hard)
+- **Input:** Multi-file project with logs + stack trace
+- **Source:** Real race condition / deadlock patterns
+- **Agent must:** Multi-turn investigation across 4 phases
+- **Expected frontier model score:** ~0.35
+
+#### Hard Task State Machine:
+```
+INIT → CONTEXT_FETCH → ROOT_CAUSE → FINAL
+```
+Agent cannot jump to a fix without investigating logs and files first.
+
+---
+
+## 🧮 Reward Function
+```
+TOTAL REWARD = (
+    0.25 × line_detection_score
+  + 0.20 × issue_classification_score
+  + 0.25 × fix_quality_score
+  + 0.15 × explanation_quality_score
+  + 0.15 × investigation_efficiency_score
+) − penalties
 ```
 
-### 2. Execution Step
-```bash
-curl -X POST "http://localhost:7860/step" \
-     -H "Content-Type: application/json" \
-     -d '{"action_type": "REQUEST_FILE", "file_name": "db.py"}'
-```
+**Penalties:**
+- −0.10 per false positive line flagged
+- −0.05 for wrong severity classification
 
-### 3. Calculate Grade
-```bash
-curl -X POST "http://localhost:7860/grader" \
-     -H "Content-Type: application/json" \
-     -d '{"episode_id": "YOUR_EPISODE_ID", "task_id": "system_debug"}'
-```
+**Key property:** Rewards partial progress at every step — not just binary end-of-episode.
 
 ---
 
-## 🏆 Reward Design
-The environment uses a multi-factor trajectory reward ∈ [0, 1]:
-- **Phase Completion (+0.3)**: Moving logically through investigation phases.
-- **Root Cause Access (+0.2)**: Successfully identifying and inspecting the buggy file.
-- **Fix Correctness (+0.3)**: Semantic similarity and deterministic correctness of the fix.
-- **Efficiency (+0.2)**: Penalty-free investigation within optimal step counts.
+## 📊 Baseline Scores
+
+| Task | Heuristic Agent Score |
+|---|---|
+| spot_the_bug | 0.7464 |
+| security_audit | 0.0901 |
+| system_debug | 0.1887 |
 
 ---
 
-## 🎯 Use Cases
-- **RL Agent Training**: Bridge the gap between code generation and system debugging.
-- **LLM Evaluation**: Benchmark reasoning capabilities of advanced models.
-- **DevSecOps Automation**: Evaluate automated security auditing tools.
+## 🌐 API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Health check |
+| `/reset` | POST | Initialize episode |
+| `/step` | POST | Submit action |
+| `/state` | GET | Current state |
+| `/tasks` | GET | All tasks + schemas |
+| `/grader` | POST | Score completed episode |
+| `/baseline` | POST | Run baseline agent |
+| `/episode_summary` | GET | Full trajectory analysis |
 
 ---
 
-## 🏗️ Quick Start
+## 🚀 Quick Start
 ```bash
+# Clone and run locally
+git clone https://github.com/rahul-69/securecodops-env
+cd securecodops-env
 docker build -t securecodops .
 docker run -p 7860:7860 securecodops
 ```
-`curl http://localhost:7860/health`
+
+Test it:
+```bash
+curl http://localhost:7860/health
+curl -X POST "http://localhost:7860/reset?task_id=spot_the_bug"
+curl -X POST "http://localhost:7860/baseline"
+```
+
+---
+
+## 🔍 Failure Mode Analysis
+
+After each episode, the grader returns:
+```json
+{
+  "score": 0.62,
+  "missed_issues": ["SQL injection not detected"],
+  "false_positives": ["line 45 incorrectly flagged"],
+  "reasoning_gap": "Agent did not inspect DB layer"
+}
+```
+
+This makes the environment useful for **agent debugging**, not just evaluation.

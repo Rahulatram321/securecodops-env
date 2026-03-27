@@ -1,53 +1,79 @@
 name: securecodops-env
-version: "1.0.0"
-description: "AI DevSecOps Debugging & Security Audit Environment for OpenEnv"
+version: "1.2.0"
+description: "AI DevSecOps Debugging & Security Audit Environment (OpenEnv)"
 author: "Antigravity"
-tags: [devsecops, code-review, security, debugging, real-world]
 
 observation_space:
   type: object
   properties:
-    task_id: {type: string}
-    step_count: {type: integer}
-    max_steps: {type: integer}
-    code_snippet: {type: string}
-    language: {type: string}
-    context: {type: string}
-    logs: {type: string}
-    stack_trace: {type: string}
-    available_files: {type: array, items: {type: string}}
-    revealed_files: {type: object, additionalProperties: {type: string}}
-    current_phase: {type: string}
-    hints_used: {type: integer}
-    metadata: {type: object}
+    task_id: 
+      type: string
+      description: "The unique identifier of the current task."
+    current_phase: 
+      type: string
+      description: "The current reasoning phase (INIT, CONTEXT_FETCH, ROOT_CAUSE, FINAL)."
+    revealed_files: 
+      type: object
+      description: "Dictionary containing snippets or full contents of files requested by the agent."
+    logs: 
+      type: string
+      description: "Runtime error logs or system output relevant to the bug."
+    stack_trace: 
+      type: string
+      description: "Python stack trace or crash report."
+    available_files:
+      type: array
+      items: {type: string}
+      description: "List of files available in the workspace for inspection."
 
 action_space:
   type: object
   properties:
-    action_type: {type: string, enum: [IDENTIFY_ISSUE, REQUEST_FILE, ASK_QUESTION, FORM_HYPOTHESIS, NARROW_DOWN, PROPOSE_FIX]}
-    line_numbers: {type: array, items: {type: integer}}
-    issue_type: {type: string, enum: [BUG, SECURITY, PERFORMANCE, LOGIC, MEMORY_LEAK, RACE_CONDITION]}
-    severity: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
-    suggested_fix: {type: string}
-    confidence: {type: number, minimum: 0.0, maximum: 1.0}
-    file_name: {type: string}
-    question: {type: string}
-    hypothesis: {type: string}
-    explanation: {type: string}
-    test_case: {type: string}
+    action_type: 
+      type: string
+      enum: [IDENTIFY_ISSUE, REQUEST_FILE, NARROW_DOWN, PROPOSE_FIX, ASK_QUESTION, FORM_HYPOTHESIS]
+      description: "The type of action to perform in the environment."
+    file_name: 
+      type: string
+      description: "Name of the file to inspect (required for REQUEST_FILE)."
+    line_numbers: 
+      type: array
+      items: {type: integer}
+      description: "List of line numbers where the issue is located (required for IDENTIFY_ISSUE)."
+    issue_type: 
+      type: string
+      description: "Type of the vulnerability or bug (e.g., SECURITY, RACE_CONDITION)."
+    suggested_fix: 
+      type: string
+      description: "The proposed code fix (required for PROPOSE_FIX)."
+    explanation: 
+      type: string
+      description: "Natural language explanation of the reasoning."
+
+reward:
+  type: float
+  range: [0.0, 1.0]
+  description: "A normalized score representing the quality of the agent's actions and final solution."
+  components:
+    - name: line_detection
+      weight: 0.3
+      description: "Accuracy of identifying the specific lines containing the bug."
+    - name: fix_quality
+      weight: 0.5
+      description: "Semantic and deterministic similarity of the proposed fix to the ground truth."
+    - name: efficiency
+      weight: 0.2
+      description: "Reward for reaching the solution in an optimal number of steps."
 
 tasks:
   - id: spot_the_bug
     difficulty: easy
-    description: "Identify obvious bugs in single-function code snippets"
     max_steps: 5
   - id: security_audit
     difficulty: medium
-    description: "Identify security vulnerabilities based on real CVE patterns"
     max_steps: 7
   - id: system_debug
     difficulty: hard
-    description: "Multi-turn system debugging using logs, stack traces, multi-file"
     max_steps: 10
 
 endpoints:

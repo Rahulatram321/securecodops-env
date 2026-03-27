@@ -30,14 +30,20 @@ class HardTask:
                 return Phase.CONTEXT_FETCH
             elif action.action_type == ActionType.FORM_HYPOTHESIS:
                 return Phase.ROOT_CAUSE
+            elif action.action_type == ActionType.ASK_QUESTION:
+                return Phase.INIT
         elif current_phase == Phase.CONTEXT_FETCH:
             if action.action_type == ActionType.NARROW_DOWN:
                 return Phase.ROOT_CAUSE
             elif action.action_type == ActionType.REQUEST_FILE:
                 return Phase.CONTEXT_FETCH
+            elif action.action_type == ActionType.FORM_HYPOTHESIS:
+                return Phase.ROOT_CAUSE
         elif current_phase == Phase.ROOT_CAUSE:
-            if action.action_type == ActionType.PROPOSE_FIX:
+            if action.action_type == ActionType.PROPOSE_FIX or action.action_type == ActionType.IDENTIFY_ISSUE:
                 return Phase.FINAL
+        elif current_phase == Phase.FINAL:
+            return Phase.FINAL
         
         return current_phase
 

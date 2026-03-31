@@ -165,3 +165,16 @@ After each episode, the grader returns:
 ```
 
 This makes the environment useful for **agent debugging**, not just evaluation.
+
+## Inference Script
+
+The baseline inference script is located at:
+
+inference.py
+
+It reads environment variables:
+- API_BASE_URL
+- MODEL_NAME
+- HF_TOKEN
+
+and produces baseline_scores JSON output.

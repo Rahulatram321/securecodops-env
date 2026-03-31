@@ -83,3 +83,6 @@ endpoints:
   tasks: /tasks
   grader: /grader
   baseline: /baseline
+
+baseline:
+  script: inference.py

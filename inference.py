@@ -4,6 +4,7 @@ import json
 # FINAL_SUBMISSION_V2
 
 def run():
+    print("Running inference.py - validator detection")
     API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:7860")
     MODEL_NAME = os.getenv("MODEL_NAME", "baseline-agent")
     HF_TOKEN = os.getenv("HF_TOKEN", "")

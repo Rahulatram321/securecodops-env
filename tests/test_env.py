@@ -23,18 +23,24 @@ def test_reset_easy():
     response = requests.post(f"{BASE_URL}/reset?task_id=spot_the_bug")
     assert response.status_code == 200
     data = response.json()
-    assert "code_snippet" in data
-    assert data["task_id"] == "spot_the_bug"
-    assert "step_count" in data
+    assert "observation" in data
+    obs = data["observation"]
+    assert obs["task_id"] == "spot_the_bug"
+    assert "code_snippet" in obs and obs["code_snippet"]
+    assert obs["step_count"] == 0
+    assert "episode_id" in data
 
 def test_step_without_reset():
-    # We need a fresh process or state to test this reliably 
-    # if the fixture resets the global env_instance.
-    # Our app.py uses a single global env_instance.
-    # If a previous test called reset, this might not return 400 
-    # unless we restart or clear state.
-    # For simplicity, we'll assume a fresh state is needed.
-    pass 
+    # fresh server starts with no state; call step without reset
+    action = {
+        "action_type": "IDENTIFY_ISSUE",
+        "line_numbers": [1],
+        "issue_type": "BUG",
+        "severity": "LOW",
+        "explanation": "placeholder"
+    }
+    response = requests.post(f"{BASE_URL}/step", json=action)
+    assert response.status_code == 400
 
 def test_full_easy_episode():
     # Reset
@@ -60,8 +66,9 @@ def test_tasks_endpoint():
     response = requests.get(f"{BASE_URL}/tasks")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 3
-    task_ids = [t["id"] for t in data]
+    assert "tasks" in data
+    assert len(data["tasks"]) == 3
+    task_ids = [t["id"] for t in data["tasks"]]
     assert "spot_the_bug" in task_ids
     assert "security_audit" in task_ids
     assert "system_debug" in task_ids

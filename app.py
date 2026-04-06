@@ -44,7 +44,7 @@ async def reset(task_id: str = "spot_the_bug"):
         obs = env_instance.reset(task_id=task_id)
         return {
             "episode_id": env_instance.state.episode_id,
-            "observation": obs
+            "observation": obs.model_dump()
         }
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
@@ -137,3 +137,8 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"error": "Internal Server Error", "detail": str(exc)}
     )
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 7860))
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)

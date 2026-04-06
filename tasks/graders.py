@@ -24,7 +24,7 @@ class EasyGrader(BaseGrader):
             return 0.0
             
         action = last_action_step.action
-        ground_truth = last_action_step.observation.metadata.get("ground_truth", {})
+        ground_truth = episode.ground_truth or {}
         
         # Line Score
         predicted = set(action.line_numbers or [])
@@ -57,7 +57,7 @@ class MediumGrader(BaseGrader):
             return 0.0
             
         action = last_action_step.action
-        ground_truth = last_action_step.observation.metadata.get("ground_truth", {})
+        ground_truth = episode.ground_truth or {}
         
         # CWE/Security Score
         cwe_score = 1.0 if str(action.issue_type or "").lower() == "security" else 0.0
@@ -86,7 +86,7 @@ class HardGrader(BaseGrader):
             
         reached_final = any(s.observation.current_phase == Phase.FINAL for s in episode.steps)
         last_step = episode.steps[-1]
-        ground_truth = last_step.observation.metadata.get("ground_truth", {})
+        ground_truth = episode.ground_truth or {}
         
         # 1. Phase Completion (0.3)
         phase_score = 0.3 if reached_final else 0.0

@@ -37,10 +37,11 @@ class EnvironmentState:
             return Observation(
                 task_id=self.task_id,
                 step_count=self.step_count,
+                code_snippet=self.sample.get("code"),
+                language=self.sample.get("language", "python"),
+                context=self.sample.get("context", "Analyze the code for bugs or vulnerabilities."),
                 revealed_files=self.revealed_files,
                 metadata={
-                    "code": self.sample.get("code"),
-                    "language": self.sample.get("language", "python"),
                     "episode_id": self.episode_id
                 }
             )
@@ -83,7 +84,8 @@ class SecureCodeOpsEnvironment:
         episode = Episode(
             episode_id=self.state.episode_id,
             task_id=task_id,
-            steps=[]
+            steps=[],
+            ground_truth=sample.get("ground_truth", {})
         )
         self.episodes[self.state.episode_id] = episode
         
@@ -124,9 +126,9 @@ class SecureCodeOpsEnvironment:
         )
         
         final_reward = max(0.0, min(1.0, reward_info.total_reward - penalty))
+        reward_info.total_reward = final_reward
         
         obs = self.state.get_observation()
-        obs.metadata["ground_truth"] = self.state.ground_truth
         
         episode_step = EpisodeStep(
             step_number=self.state.step_count,
@@ -139,7 +141,14 @@ class SecureCodeOpsEnvironment:
         episode.steps.append(episode_step)
         episode.total_reward += final_reward
         
-        done = self.state.step_count >= 10 or final_reward >= 0.95
+        # task-specific max steps
+        max_steps = 10
+        if self.state.task_id == "spot_the_bug":
+            max_steps = 5
+        elif self.state.task_id == "security_audit":
+            max_steps = 7
+
+        done = self.state.step_count >= max_steps or final_reward >= 0.95
         if done:
             episode.is_complete = True
             episode.final_score = final_reward
@@ -148,7 +157,7 @@ class SecureCodeOpsEnvironment:
             observation=obs,
             reward=final_reward,
             done=done,
-            info=reward_info.to_dict()
+            info=reward_info
         )
 
     def get_state(self) -> Dict[str, Any]:

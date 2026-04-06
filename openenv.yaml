@@ -6,9 +6,24 @@ author: "Antigravity"
 observation_space:
   type: object
   properties:
+    step_count:
+      type: integer
+      description: "Current step number in the episode."
+    max_steps:
+      type: integer
+      description: "Maximum steps allowed for the current task."
     task_id: 
       type: string
       description: "The unique identifier of the current task."
+    code_snippet:
+      type: string
+      description: "Inline code shown to the agent for the easy/medium tasks."
+    language:
+      type: string
+      description: "Language of the snippet (e.g., python)."
+    context:
+      type: string
+      description: "Human-readable task description/hints."
     current_phase: 
       type: string
       description: "The current reasoning phase (INIT, CONTEXT_FETCH, ROOT_CAUSE, FINAL)."
@@ -43,12 +58,19 @@ action_space:
     issue_type: 
       type: string
       description: "Type of the vulnerability or bug (e.g., SECURITY, RACE_CONDITION)."
+    severity:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      description: "Impact classification."
     suggested_fix: 
       type: string
       description: "The proposed code fix (required for PROPOSE_FIX)."
     explanation: 
       type: string
       description: "Natural language explanation of the reasoning."
+    confidence:
+      type: number
+      description: "Self-reported confidence between 0.0 and 1.0."
 
 reward:
   type: float
@@ -56,14 +78,20 @@ reward:
   description: "A normalized score representing the quality of the agent's actions and final solution."
   components:
     - name: line_detection
-      weight: 0.3
+      weight: 0.25
       description: "Accuracy of identifying the specific lines containing the bug."
     - name: fix_quality
-      weight: 0.5
+      weight: 0.25
       description: "Semantic and deterministic similarity of the proposed fix to the ground truth."
     - name: efficiency
-      weight: 0.2
+      weight: 0.15
       description: "Reward for reaching the solution in an optimal number of steps."
+    - name: explanation_quality
+      weight: 0.15
+      description: "Measures whether the reasoning references the key causal factors."
+    - name: issue_classification
+      weight: 0.2
+      description: "Correctly classifying vulnerability/issue family."
 
 tasks:
   - id: spot_the_bug

@@ -92,6 +92,7 @@ class Episode(BaseModel):
     total_reward: float = 0.0
     is_complete: bool = False
     final_score: Optional[float] = None
+    ground_truth: Dict[str, Any] = Field(default_factory=dict)
     missed_issues: List[str] = Field(default_factory=list)
     false_positives: List[str] = Field(default_factory=list)
     reasoning_gap: Optional[str] = None

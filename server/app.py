@@ -138,7 +138,10 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"error": "Internal Server Error", "detail": str(exc)}
     )
 
-if __name__ == "__main__":
+def start():
     import uvicorn
     port = int(os.getenv("PORT", 7860))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("server.app:app", host="0.0.0.0", port=port, reload=False)
+
+if __name__ == "__main__":
+    start()

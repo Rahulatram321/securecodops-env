@@ -1,0 +1,17 @@
+﻿9f13b2f fix: HF_TOKEN, END format, flush=True - resubmission
+ inference.py | 105 ++++++++++++++++++++++++-----------------------------------
+ 1 file changed, 42 insertions(+), 63 deletions(-)
+8337d52 Route inference through LiteLLM proxy and add real chat completions
+ inference.py | 40 ++++++++++++++++++++++++++++++++++------
+ 1 file changed, 34 insertions(+), 6 deletions(-)
+37396ed Add server main entrypoint for validator
+ pyproject.toml | 2 +-
+ server/app.py  | 5 ++++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+6b32aa6 Fix Dockerfile entrypoint to run FastAPI server
+ Dockerfile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+667f2f8 Add uv lockfile and openenv-core to requirements
+ requirements.txt |    1 +
+ uv.lock          | 2851 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 2852 insertions(+)

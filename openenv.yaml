@@ -109,6 +109,7 @@ endpoints:
   step: /step
   state: /state
   tasks: /tasks
+  health: /health
   grader: /grader
   baseline: /baseline
 

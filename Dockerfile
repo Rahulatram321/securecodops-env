@@ -1,9 +1,7 @@
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    build-essential \
+    git curl build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -15,8 +13,8 @@ COPY . .
 
 EXPOSE 7860
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f "http://localhost:${PORT:-7860}/health" || exit 1
+# Health check hits the root endpoint (always returns 200)
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:7860/ || exit 1
 
-# inference.py is present at repo root for validator
-CMD ["python", "-m", "server.app"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]

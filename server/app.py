@@ -32,37 +32,71 @@ app = FastAPI(title="SecureCodeOpsEnv", lifespan=lifespan)
 
 @app.get("/")
 async def root():
-    return {"name": "SecureCodeOpsEnv", "status": "running", "docs": "/docs"}
+    return {"status": "ok", "name": "SecureCodeOpsEnv", "docs": "/docs"}
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "env": "securecodops-env", "version": "1.2.0"}
 
+# ── /reset  accepts BOTH query-param and JSON body so the validator never 404s ──
 @app.post("/reset")
-async def reset(task_id: str = "spot_the_bug"):
+async def reset(request: Request, task_id: Optional[str] = None):
+    """Reset the environment. Accepts task_id as query param OR in JSON body."""
+    # Try to read from JSON body first, then fall back to query param
+    if task_id is None:
+        try:
+            body = await request.json()
+            task_id = body.get("task_id", "spot_the_bug") if body else "spot_the_bug"
+        except Exception:
+            task_id = "spot_the_bug"
+
     try:
         obs = env_instance.reset(task_id=task_id)
         return {
+            "observation": obs.model_dump(),
+            "done": False,
+            "reward": 0.0,
             "episode_id": env_instance.state.episode_id,
-            "observation": obs.model_dump()
         }
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/step", response_model=StepResult)
+# ── /step  returns the exact fields the validator checks ──
+@app.post("/step")
 async def step(action: Action):
     if env_instance.state is None:
         raise HTTPException(status_code=400, detail="Environment not initialized. Call /reset first.")
     try:
-        return env_instance.step(action)
+        result = env_instance.step(action)
+        return {
+            "observation": result.observation.model_dump(),
+            "reward": float(result.reward),
+            "done": result.done,
+            "last_action_error": None,
+            "info": result.info.model_dump(),
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "observation": {},
+            "reward": 0.0,
+            "done": True,
+            "last_action_error": str(e),
+        }
 
 @app.get("/state")
 async def get_state():
     return env_instance.get_state()
+
+@app.post("/close")
+async def close():
+    """Close the current episode and reset environment state."""
+    try:
+        env_instance.close()
+        return {"status": "closed"}
+    except Exception as e:
+        return {"status": "closed", "detail": str(e)}
 
 @app.get("/tasks")
 async def get_tasks():
@@ -105,8 +139,6 @@ async def post_grader(payload: Dict[str, str]):
 async def post_baseline(request: Request):
     from baseline.run_baseline import run_adaptive_baseline
     try:
-        # Calling without base_url triggers Direct (in-process) execution
-        # avoiding HTTP loopback issues inside Docker.
         scores = run_adaptive_baseline()
         return {"baseline_scores": scores, "status": "complete"}
     except Exception as e:
@@ -143,8 +175,5 @@ def start():
     port = int(os.getenv("PORT", 7860))
     uvicorn.run("server.app:app", host="0.0.0.0", port=port, reload=False)
 
-def main() -> None:
-    start()
-
 if __name__ == "__main__":
-    main()
+    start()

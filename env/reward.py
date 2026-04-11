@@ -123,7 +123,7 @@ class RewardCalculator:
             "investigation_efficiency": info_kwargs["investigation_efficiency_score"],
             "penalties": total_penalties
         }
-        info_kwargs["total_reward"] = max(0.0, min(1.0, raw_total - total_penalties))
+        info_kwargs["total_reward"] = max(0.01, min(0.99, raw_total - total_penalties))
         
         # Build Feedback
         if info_kwargs["total_reward"] > 0.8:

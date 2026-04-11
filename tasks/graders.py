@@ -11,7 +11,7 @@ class BaseGrader(ABC):
 class EasyGrader(BaseGrader):
     def score_episode(self, episode: Episode) -> float:
         if not episode.steps:
-            return 0.0
+            return 0.01
         
         # Find last IDENTIFY_ISSUE
         last_action_step = None
@@ -21,7 +21,7 @@ class EasyGrader(BaseGrader):
                 break
         
         if not last_action_step:
-            return 0.0
+            return 0.01
             
         action = last_action_step.action
         ground_truth = episode.ground_truth or {}
@@ -40,12 +40,12 @@ class EasyGrader(BaseGrader):
         type_score = 1.0 if pred_type == gt_type else 0.0
         
         final = (0.6 * line_score + 0.4 * type_score)
-        return float(max(0.0, min(1.0, final)))
+        return float(max(0.01, min(0.99, final)))
 
 class MediumGrader(BaseGrader):
     def score_episode(self, episode: Episode) -> float:
         if not episode.steps:
-            return 0.0
+            return 0.01
             
         last_action_step = None
         for s in reversed(episode.steps):
@@ -54,7 +54,7 @@ class MediumGrader(BaseGrader):
                 break
         
         if not last_action_step:
-            return 0.0
+            return 0.01
             
         action = last_action_step.action
         ground_truth = episode.ground_truth or {}
@@ -77,12 +77,12 @@ class MediumGrader(BaseGrader):
             fix_score = float(sm.ratio())
             
         final = (0.3 * cwe_score + 0.3 * line_score + 0.4 * fix_score)
-        return float(max(0.0, min(1.0, final)))
+        return float(max(0.01, min(0.99, final)))
 
 class HardGrader(BaseGrader):
     def score_episode(self, episode: Episode) -> float:
         if not episode.steps:
-            return 0.0
+            return 0.01
             
         reached_final = any(s.observation.current_phase == Phase.FINAL for s in episode.steps)
         last_step = episode.steps[-1]
@@ -113,7 +113,7 @@ class HardGrader(BaseGrader):
         if not reached_final:
             episode.missed_issues.append("Agent failed to reach the FINAL reasoning phase.")
             
-        return float(max(0.0, min(1.0, phase_score + file_score + fix_score + efficiency_score)))
+        return float(max(0.01, min(0.99, phase_score + file_score + fix_score + efficiency_score)))
 
 def get_grader(task_id: str) -> BaseGrader:
     if task_id == "spot_the_bug":
